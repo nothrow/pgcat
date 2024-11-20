@@ -682,7 +682,8 @@ impl ConnectionPool {
         role: Option<Role>,         // primary or replica
         client_stats: &ClientStats, // client id
     ) -> Result<(PooledConnection<'_, ServerPool>, Address), Error> {
-        let effective_shard_id = if self.shards() == 1 {
+        // Fail requires the shard to be selected explicitly every time, even if there is only one
+        let effective_shard_id = if self.shards() == 1 && self.settings.default_shard != DefaultShard::Fail {
             // The base, unsharded case
             Some(0)
         } else {
