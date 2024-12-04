@@ -1,5 +1,6 @@
 use std::fs;
 use serde_json::Value;
+use log::debug;
 
 pub struct ShardingExplicitConfiguration {
     shard_map: std::collections::HashMap<i64, usize>
@@ -7,14 +8,15 @@ pub struct ShardingExplicitConfiguration {
 
 impl ShardingExplicitConfiguration {
     pub fn determine_shard(&self, key: i64) -> usize {
-        *self.shard_map.get(&key).expect("Key not found in shard map")
+        let ret = *self.shard_map.get(&key).expect("Key not found in shard map");
+
+        debug!("ExplicitSharder: key: {}, shard: {}", key, ret);
+
+        ret
     }
     
     pub fn from_file(sharding_source: &Option<String>) -> ShardingExplicitConfiguration {
-        // check, if file sharding_source exists, if not, fail hard
-        // read file
-        // parse file
-
+        // todo: cache?
         if let Some(file_path) = sharding_source {
             if !fs::metadata(&file_path).is_ok() {
                 panic!("Sharding source file does not exist: {}", file_path);

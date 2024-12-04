@@ -90,8 +90,11 @@ default_shard = "fail" # invalid shard
 #
 # pg_bigint_hash: PARTITION BY HASH (Postgres hashing function)
 # sha1: A hashing function based on SHA1
+# file_mapping: an sharding_source, with path to json with maps { id: shard, id: shard, ... } is expected
 #
 sharding_function = "pg_bigint_hash"
+#
+# sharding_source = ''
 
 # Credentials for users that may connect to this cluster
 [pools.qtest.users.0]
