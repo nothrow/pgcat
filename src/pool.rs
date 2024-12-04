@@ -177,6 +177,9 @@ pub struct PoolSettings {
     // Sharding function.
     pub sharding_function: ShardingFunction,
 
+    // File, where sharding setting is located in
+    pub sharding_source: Option<String>,
+
     // Sharding key
     pub automatic_sharding_key: Option<String>,
 
@@ -224,6 +227,7 @@ impl Default for PoolSettings {
             query_parser_read_write_splitting: false,
             primary_reads_enabled: true,
             sharding_function: ShardingFunction::PgBigintHash,
+            sharding_source: Option::None,
             automatic_sharding_key: None,
             healthcheck_delay: General::default_healthcheck_delay(),
             healthcheck_timeout: General::default_healthcheck_timeout(),
@@ -537,6 +541,7 @@ impl ConnectionPool {
                             .query_parser_read_write_splitting,
                         primary_reads_enabled: pool_config.primary_reads_enabled,
                         sharding_function: pool_config.sharding_function,
+                        sharding_source: pool_config.sharding_source.clone(),
                         automatic_sharding_key: pool_config.automatic_sharding_key.clone(),
                         healthcheck_delay: config.general.healthcheck_delay,
                         healthcheck_timeout: config.general.healthcheck_timeout,

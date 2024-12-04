@@ -2,6 +2,8 @@ use serde_derive::{Deserialize, Serialize};
 /// Implements various sharding functions.
 use sha1::{Digest, Sha1};
 
+use crate::sharding_explicit::ShardingExplicitConfiguration;
+
 /// See: <https://github.com/postgres/postgres/blob/27b77ecf9f4d5be211900eda54d8155ada50d696/src/include/catalog/partition.h#L20>.
 const PARTITION_HASH_SEED: u64 = 0x7A5B22367996DCFD;
 
@@ -12,6 +14,8 @@ pub enum ShardingFunction {
     PgBigintHash,
     #[serde(alias = "sha1", alias = "Sha1")]
     Sha1,
+    #[serde(alias = "file_mapping", alias = "FileMapping")]
+    FileMapping,
 }
 
 impl std::fmt::Display for ShardingFunction {
@@ -19,6 +23,7 @@ impl std::fmt::Display for ShardingFunction {
         match self {
             ShardingFunction::PgBigintHash => write!(f, "pg_bigint_hash"),
             ShardingFunction::Sha1 => write!(f, "sha1"),
+            ShardingFunction::FileMapping => write!(f, "file_mapping"),
         }
     }
 }
@@ -30,14 +35,18 @@ pub struct Sharder {
 
     /// The sharding function in use.
     sharding_function: ShardingFunction,
+
+    /// loaded file based 
+    explicit_shard_config: Option<ShardingExplicitConfiguration>,
 }
 
 impl Sharder {
     /// Create new instance of the sharder.
-    pub fn new(shards: usize, sharding_function: ShardingFunction) -> Sharder {
+    pub fn new(shards: usize, sharding_function: ShardingFunction, explicit_shard_config: Option<ShardingExplicitConfiguration>) -> Sharder {
         Sharder {
             shards,
             sharding_function,
+            explicit_shard_config
         }
     }
 
@@ -46,7 +55,12 @@ impl Sharder {
         match self.sharding_function {
             ShardingFunction::PgBigintHash => self.pg_bigint_hash(key),
             ShardingFunction::Sha1 => self.sha1(key),
+            ShardingFunction::FileMapping => self.file_mapping(key),
         }
+    }
+
+    fn file_mapping(&self, key: i64) -> usize {
+        self.explicit_shard_config.as_ref().expect("explicit_shard_config is None").determine_shard(key)
     }
 
     /// Hash function used by Postgres to determine which partition
@@ -166,7 +180,7 @@ mod test {
     // confirming that we implemented Postgres BIGINT hashing correctly.
     #[test]
     fn test_pg_bigint_hash() {
-        let sharder = Sharder::new(5, ShardingFunction::PgBigintHash);
+        let sharder = Sharder::new(5, ShardingFunction::PgBigintHash, Option::None);
 
         let shard_0 = vec![1, 4, 5, 14, 19, 39, 40, 46, 47, 53];
 
@@ -201,7 +215,7 @@ mod test {
 
     #[test]
     fn test_sha1_hash() {
-        let sharder = Sharder::new(12, ShardingFunction::Sha1);
+        let sharder = Sharder::new(12, ShardingFunction::Sha1, Option::None);
         let ids = [
             0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
         ];

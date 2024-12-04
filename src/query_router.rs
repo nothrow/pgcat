@@ -663,6 +663,14 @@ impl QueryRouter {
         table_names.push(name.0.clone())
     }
 
+    fn create_sharder(&self) -> Sharder {
+        return Sharder::new(
+            self.pool_settings.shards,
+            self.pool_settings.sharding_function,
+            Option::None,
+        );
+    }
+
     /// Parse the shard number from the Bind message
     /// which contains the arguments for a prepared statement.
     ///
@@ -701,10 +709,7 @@ impl QueryRouter {
             return false;
         }
 
-        let sharder = Sharder::new(
-            self.pool_settings.shards,
-            self.pool_settings.sharding_function,
-        );
+        let sharder = self.create_sharder();
 
         let mut shards = BTreeSet::new();
 
@@ -962,10 +967,7 @@ impl QueryRouter {
     ) -> Option<usize> {
         let mut shards = BTreeSet::new();
 
-        let sharder = Sharder::new(
-            self.pool_settings.shards,
-            self.pool_settings.sharding_function,
-        );
+        let sharder = self.create_sharder();
 
         // Look for sharding keys in either the join condition
         // or the selection.
@@ -1052,10 +1054,7 @@ impl QueryRouter {
     }
 
     fn set_sharding_key(&mut self, sharding_key: i64) -> Option<usize> {
-        let sharder = Sharder::new(
-            self.pool_settings.shards,
-            self.pool_settings.sharding_function,
-        );
+        let sharder = self.create_sharder();
         let shard = sharder.shard(sharding_key);
         self.set_shard(Some(shard));
         self.active_shard
@@ -1460,6 +1459,7 @@ mod test {
             query_parser_read_write_splitting: true,
             primary_reads_enabled: false,
             sharding_function: ShardingFunction::PgBigintHash,
+            sharding_source: Option::None,
             automatic_sharding_key: Some(String::from("test.id")),
             healthcheck_delay: PoolSettings::default().healthcheck_delay,
             healthcheck_timeout: PoolSettings::default().healthcheck_timeout,
@@ -1538,6 +1538,7 @@ mod test {
             query_parser_read_write_splitting: true,
             primary_reads_enabled: false,
             sharding_function: ShardingFunction::PgBigintHash,
+            sharding_source: Option::None,
             automatic_sharding_key: None,
             healthcheck_delay: PoolSettings::default().healthcheck_delay,
             healthcheck_timeout: PoolSettings::default().healthcheck_timeout,

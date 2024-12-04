@@ -15,6 +15,7 @@ pub mod prometheus;
 pub mod query_router;
 pub mod scram;
 pub mod server;
+pub mod sharding_explicit;
 pub mod sharding;
 pub mod stats;
 pub mod tls;

@@ -566,6 +566,8 @@ pub struct Pool {
     #[serde(default = "Pool::default_sharding_function")]
     pub sharding_function: ShardingFunction,
 
+    pub sharding_source: Option<String>,
+
     #[serde(default = "Pool::default_automatic_sharding_key")]
     pub automatic_sharding_key: Option<String>,
 
@@ -742,6 +744,7 @@ impl Default for Pool {
             idle_timeout: None,
             server_lifetime: None,
             sharding_function: ShardingFunction::PgBigintHash,
+            sharding_source: Option::None,
             automatic_sharding_key: None,
             sharding_key_regex: None,
             shard_id_regex: None,
