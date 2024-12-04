@@ -17,7 +17,8 @@ use crate::errors::Error;
 use crate::messages::BytesMutReader;
 use crate::plugins::{Intercept, Plugin, PluginOutput, QueryLogger, TableAccess};
 use crate::pool::PoolSettings;
-use crate::sharding::Sharder;
+use crate::sharding::{Sharder, ShardingFunction};
+use crate::sharding_explicit::ShardingExplicitConfiguration;
 
 use std::collections::BTreeSet;
 use std::io::Cursor;
@@ -664,11 +665,21 @@ impl QueryRouter {
     }
 
     fn create_sharder(&self) -> Sharder {
-        return Sharder::new(
-            self.pool_settings.shards,
-            self.pool_settings.sharding_function,
-            Option::None,
-        );
+
+        match self.pool_settings.sharding_function  {
+            ShardingFunction::FileMapping => Sharder::new(
+                self.pool_settings.shards,
+                self.pool_settings.sharding_function,
+                Option::Some(ShardingExplicitConfiguration::from_file(
+                    &self.pool_settings.sharding_source
+                ))
+            ),
+            _ => Sharder::new(
+                self.pool_settings.shards,
+                self.pool_settings.sharding_function,
+                Option::None,
+            )
+        }
     }
 
     /// Parse the shard number from the Bind message
