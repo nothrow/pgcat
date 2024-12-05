@@ -889,6 +889,7 @@ pub struct Plugins {
     pub intercept: Option<Intercept>,
     pub table_access: Option<TableAccess>,
     pub query_logger: Option<QueryLogger>,
+    pub ignore_sets: Option<IgnoreSet>,
     pub prewarmer: Option<Prewarmer>,
 }
 
@@ -946,6 +947,18 @@ pub struct QueryLogger {
 }
 
 impl Plugin for QueryLogger {
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default, Hash, Eq)]
+pub struct IgnoreSet {
+    pub enabled: bool,
+    pub ignored: Vec<String>,
+}
+
+impl Plugin for IgnoreSet {
     fn is_enabled(&self) -> bool {
         self.enabled
     }

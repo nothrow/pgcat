@@ -15,7 +15,7 @@ use sqlparser::parser::Parser;
 use crate::config::Role;
 use crate::errors::Error;
 use crate::messages::BytesMutReader;
-use crate::plugins::{Intercept, Plugin, PluginOutput, QueryLogger, TableAccess};
+use crate::plugins::{Intercept, Plugin, PluginOutput, QueryLogger, TableAccess, IgnoreSets};
 use crate::pool::PoolSettings;
 use crate::sharding::{Sharder, ShardingFunction};
 use crate::sharding_explicit::ShardingExplicitConfiguration;
@@ -1033,6 +1033,19 @@ impl QueryRouter {
             };
 
             let _ = query_logger.run(self, ast).await;
+        }
+
+        if let Some(ref ignore_set) = plugins.ignore_sets {
+            let mut ignore_set = IgnoreSets {
+                enabled: ignore_set.enabled,
+                ignored: &ignore_set.ignored,
+            };
+
+            let result = ignore_set.run(self, ast).await;
+
+            if let Ok(PluginOutput::Intercept(output)) = result {
+                return Ok(PluginOutput::Intercept(output));
+            }
         }
 
         if let Some(ref intercept) = plugins.intercept {
