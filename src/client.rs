@@ -917,6 +917,8 @@ where
                 message_result = read_message(&mut self.read) => message_result?
             };
 
+            trace!("Got message '{}'", message[0] as char);
+
             if message[0] as char == 'X' {
                 debug!("Client disconnecting");
 
@@ -1040,6 +1042,24 @@ where
                     self.extended_protocol_data_buffer
                         .push_back(ExtendedProtocolData::create_new_close(message, close));
                     continue;
+                }
+
+                // Sync
+                'S' => {
+                    if query_router.shard().is_none() {
+
+                        warn!("Got Sync message but no shard selected yet, ignoring.");
+                        // no shard selected (yet), so no
+                        // server to sync against. whatever.
+
+                        // this happens mostly in JDBC, when it sends 'set shit = piss' commands on connection setup
+                        // todo: figure out what to do and if we care
+                        
+                        send_ready_for_query(&mut self.write).await?;
+                        self.reset_buffered_state();
+
+                        continue;
+                    }
                 }
 
                 _ => (),
